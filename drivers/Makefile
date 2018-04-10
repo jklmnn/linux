@@ -22,6 +22,7 @@ obj-y				+= idle/
 
 # Genode
 obj-$(CONFIG_GENODE_HWIO)	+= char/genode/
+obj-$(CONFIG_GENODE_PLATFORM_INFO)	+= char/genode/
 
 # IPMI must come before ACPI in order to provide IPMI opregion support
 obj-$(CONFIG_IPMI_HANDLER)	+= char/ipmi/

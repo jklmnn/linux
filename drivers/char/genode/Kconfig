@@ -1,7 +1,11 @@
 config GENODE
 tristate "Genode support for Linux"
 select GENODE_HWIO
+select GENODE_PLATFORM_INFO
 
 config GENODE_HWIO
 tristate "Genode hwio module"
 depends on HAS_IOMEM
+
+config GENODE_PLATFORM_INFO
+tristate "platform_info ROM for Genode"
