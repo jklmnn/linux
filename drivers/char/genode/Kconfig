@@ -1,0 +1,7 @@
+config GENODE
+tristate "Genode support for Linux"
+select GENODE_HWIO
+
+config GENODE_HWIO
+tristate "Genode hwio module"
+depends on HAS_IOMEM
