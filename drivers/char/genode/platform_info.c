@@ -5,7 +5,7 @@
 #include <linux/capability.h>
 #include <linux/fs.h>
 #include <linux/miscdevice.h>
-#include <linux/screen_info.h> 
+#include <linux/screen_info.h>
 #include <linux/string.h>
 #include <linux/mm.h>
 #include <linux/slab.h>
@@ -45,7 +45,7 @@ static size_t pi_cat(char *string)
     }
 
     if(write != len){
-        printk("platform_info: warning: platform_info too small, failed to cat %zu bytes\n", len - write);
+        printk(KERN_ALERT "platform_info: warning: platform_info too small, failed to cat %zu bytes\n", len - write);
     }
 
     return write;
@@ -53,19 +53,19 @@ static size_t pi_cat(char *string)
 
 static int open_platform_info(struct inode *inode, struct file *file)
 {
-    printk("%s\n", __func__);
-    
+    printk(KERN_DEBUG "%s\n", __func__);
+
     if(!capable(CAP_SYS_RAWIO))
         return -EPERM;
 
     inode->i_size = strlen(platform_info);
-    
+
     return 0;
 }
 
 static ssize_t read_platform_info(struct file *file, char __user *buffer, size_t length, loff_t *offset)
 {
-    printk("%s\n", __func__);
+    printk(KERN_DEBUG "%s\n", __func__);
     return 0;
 }
 
@@ -73,9 +73,9 @@ static int mmap_platform_info(struct file *file, struct vm_area_struct *vma)
 {
     unsigned long page;
     size_t size = vma->vm_end - vma->vm_start;
-    printk("%s\n", __func__);
+    printk(KERN_DEBUG "%s\n", __func__);
 
-    printk("%lu <-> %lu\n", size, PLATFORM_INFO_SIZE + 1);
+    printk(KERN_DEBUG "%lu <-> %lu\n", size, PLATFORM_INFO_SIZE + 1);
     if(size > PLATFORM_INFO_SIZE + 1){
         return -EINVAL;
     }
@@ -178,7 +178,7 @@ static unsigned long find_rsdp(void)
             }
         }
     }
-    
+
     return rsdp_phys;
 }
 
@@ -190,18 +190,18 @@ static void generate_acpi_info(void)
     char oem[7];
     unsigned long rsdp_phys = find_rsdp();
     struct rsdp_t *rsdp = 0;
-    
+
     if(rsdp_phys){
         rsdp = (struct rsdp_t *)ioremap_cache(rsdp_phys, sizeof(struct rsdp_t));
     }
 
     memset(acpi_buffer, 0, 128);
     memset(xsdt_buffer, 0, 32);
-    
+
     if(rsdp && !strncmp(rsdp->signature, id, 8)){
         strncpy(oem, rsdp->oemid, 6);
         oem[6] = '\0';
-        printk("rsdp found of oem: %s\n", oem);
+        printk(KERN_INFO"rsdp found of oem: %s\n", oem);
 
         sprintf(acpi_buffer,
                 "    <acpi revision=\"%u\" rsdt=\"%#x\" ",
@@ -223,7 +223,7 @@ static void generate_platform_info(void)
 {
     memset(platform_info, 0, PLATFORM_INFO_SIZE + 1);
     pi_size = 0;
-    
+
     pi_cat("<platform_info>\n");
     generate_acpi_info();
     generate_boot_fb_info();
@@ -234,7 +234,7 @@ static int __init platform_info_init(void)
 {
     platform_info = (char*)kmalloc(PLATFORM_INFO_SIZE + 1, GFP_KERNEL);
     generate_platform_info();
-    printk("platform_info:\n%s", platform_info);
+    printk(KERN_INFO "platform_info:\n%s", platform_info);
     misc_register(&platform_info_dev);
     printk(KERN_INFO "platform_info registered\n");
     return 0;

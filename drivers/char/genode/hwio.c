@@ -70,9 +70,9 @@ static int mmap_hwio(struct file* file, struct vm_area_struct *vma)
             vma->vm_pgoff = range->phys >> PAGE_SHIFT;
             offset = (phys_addr_t)(vma->vm_pgoff) << PAGE_SHIFT;
 
-            printk("%s vma->vm_pgoff: %lx\n", __func__, vma->vm_pgoff);
-            printk("%s offset: %llx\n", __func__, offset);
-            printk("%s range: %lx x %zu\n", __func__, range->phys, range->length);
+            printk(KERN_DEBUG "%s vma->vm_pgoff: %lx\n", __func__, vma->vm_pgoff);
+            printk(KERN_DEBUG "%s offset: %llx\n", __func__, offset);
+            printk(KERN_DEBUG "%s range: %lx x %zu\n", __func__, range->phys, range->length);
 
             // check boundaries set by ioctl
             if(size > range->length)
@@ -149,7 +149,7 @@ static long ioctl_hwio(struct file *file, unsigned int cmd, unsigned long arg)
     irq_t *irq = &(hwio->irq);
     dma_t *dma = &(hwio->dma);
 
-    printk("%s\n", __func__);
+    printk(KERN_DEBUG "%s\n", __func__);
 
     // if the range is already set it cannot be changed anymore
     if(hwio->type != T_UNCONFIGURED)
@@ -161,6 +161,7 @@ static long ioctl_hwio(struct file *file, unsigned int cmd, unsigned long arg)
             if(copy_from_user(range, (mmio_range_t*)arg, sizeof(mmio_range_t))){
                 return -EACCES;
             }
+            printk(KERN_INFO "%s configuring %#lx x %zu I/O memory\n", __func__, range->phys, range->length);
             // extend size to full pages since we can only mmap pages
             range->length = (range->length / PAGE_SIZE * PAGE_SIZE) + !!(range->length % PAGE_SIZE) * PAGE_SIZE;
             hwio->type = T_MMIO;
@@ -170,7 +171,7 @@ static long ioctl_hwio(struct file *file, unsigned int cmd, unsigned long arg)
             if(copy_from_user(&(irq->irq), (int*)arg, sizeof(int))){
                 return -EACCES;
             }
-            printk("%s requesting irq %d\n", __func__, irq->irq);
+            printk(KERN_INFO "%s requesting irq %d\n", __func__, irq->irq);
             ret = request_irq(irq->irq, irq_dispatcher, IRQF_SHARED | IRQF_NO_SUSPEND, __func__, (void*)hwio);
             if (ret < 0){
                 printk(KERN_ALERT "%s: requesting irq %d failed with %d\n", __func__, irq->irq, ret);
@@ -192,7 +193,7 @@ static long ioctl_hwio(struct file *file, unsigned int cmd, unsigned long arg)
             }
             // extend size to full pages since we can only mmap pages
             dma->size = (dma->size / PAGE_SIZE * PAGE_SIZE) + !!(dma->size % PAGE_SIZE) * PAGE_SIZE;
-            printk("%s allocated %zu byte dma memory @ %#llx\n", __func__, dma->size, dma->phys);
+            printk(KERN_INFO "%s allocated %zu byte dma memory @ %#llx\n", __func__, dma->size, dma->phys);
             hwio->type = T_DMA;
             break;
 
@@ -207,7 +208,7 @@ static long ioctl_hwio(struct file *file, unsigned int cmd, unsigned long arg)
 ssize_t read_hwio (struct file *file, char __user *data, size_t size, loff_t *__attribute__((unused))offset)
 {
     hwio_data_t *hwio = (hwio_data_t*)(file->private_data);
-    printk("%s\n", __func__);
+    printk(KERN_DEBUG "%s\n", __func__);
 
     switch (hwio->type)
     {
